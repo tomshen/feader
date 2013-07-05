@@ -1,0 +1,24 @@
+{
+  "name": "feader",
+  "version": "0.0.1",
+  "author": "Tom Shen <tom@tomshen.me>",
+  "description": "a feed reader and syncing backend",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tomshen/feader.git"
+  },
+  "dependencies": {
+    "express": "~3.0.6",
+    "feedparser": "~0.16.1",
+    "passport": "~0.1.17",
+    "orm": "~2.0.14",
+    "sqlite3": "~2.1.10",
+    "request": "~2.21.0",
+    "consolidate": "~0.9.1",
+    "swig": "~0.14.0"
+  },
+  "license": "MIT",
+  "engines": {
+    "node": "0.10.x"
+  }
+}

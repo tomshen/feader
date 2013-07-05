@@ -1,0 +1,83 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width" />
+  <title>Feader</title>
+  <link rel="stylesheet" href="/static/css/foundation.min.css" />
+  <link rel="stylesheet" href="/static/css/feed.css" />
+  <script src="/static/js/vendor/custom.modernizr.js"></script>
+</head>
+<body>
+  <div class="contain-to-grid sticky">
+    <nav class="top-bar">
+      <ul class="title-area">
+        <li class="name">
+          <h1><a href="/">Feader</a></h1>
+        </li>
+        <li class="toggle-topbar menu-icon"><a href="#"><span>Menu</span></a></li>
+      </ul>
+      <section class="top-bar-section">
+        <ul class="left">
+        </ul>
+        <ul class="right">
+        </ul>
+      </section>
+    </nav>
+  </div>
+  <div class="row">
+    <div class="large-10 large-offset-1 columns">
+      <header>
+        <h1>
+          <a href="{{ meta.link }}">{{ meta.title }}</a>
+          <a href="{{ meta.xmlUrl }}"><img src="/static/img/feed-icon.png" alt="{{ meta['#type'] }}" /></a>
+        </h1>
+        {% if article.author %}
+        <h2 class="subheader">By {{ meta.author }}</h2>
+        {% endif %}
+        <h3 class="subheader">
+          {% if meta.description %}{{ meta.description }}{% endif %}
+        </h3>
+      </header>
+      {% for article in articles %}
+      <div class="article">
+        <h3><a href="{{ article.link }}">{{ article.title }}</a></h3>
+        <ul class="article-info inline-list">
+          {% if article.author %}
+          <li class="article-author"><strong>Author:</strong> {{ article.author }}</li>
+          {% endif %}
+          <li class="article-date">
+            <strong>Published on:</strong>
+            {% if article.date %}
+              {{ article.date.toLocaleString() }}
+            {% else if article.pubdate %}
+              {{ article.pubdate.toLocaleString() }}
+            {% endif %}
+          </li>
+        </ul>
+        {% autoescape false %}
+        <div class="article-description">{{ article.description }}</div>
+        {% endautoescape %}
+      </div>
+      {% else %}
+      <p>No articles found</p>
+      {% endfor %}
+      <footer>
+        {% if meta.copyright %}{{ meta.copyright }}{% endif %}
+      </footer>
+    </div>
+  </div>
+  <script>
+    document.write('<script src=/static/js/vendor/' 
+      + ('__proto__' in {} ? 'zepto' : 'jquery') 
+      + '.js><\/script>');
+  </script>
+  <script src="/static/js/foundation.min.js"></script>
+  <script src="/static/js/foundation.topbar.js"></script>
+  <script>
+    $(document).foundation();
+  </script>
+  <script src="/static/js/underscore.min.js"></script>
+  <script src="/static/js/backbone.min.js"></script>
+</body>
+</html>

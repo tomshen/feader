@@ -1,0 +1,12 @@
+.article, header {
+    padding-bottom: 0.8em;
+    border-bottom: 0.2em dashed #AAA;
+}
+
+header {
+    border-bottom: 0.2em solid #AAA;
+}
+
+footer {
+    padding-top: 1em;
+}
