@@ -15,7 +15,8 @@
     "request": "~2.21.0",
     "consolidate": "~0.9.1",
     "swig": "~0.14.0",
-    "pg": "~2.0.0"
+    "pg": "~2.0.0",
+    "underscore": "~1.5.0"
   },
   "license": "MIT",
   "engines": {
