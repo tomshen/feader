@@ -62,7 +62,7 @@ app.use(orm.express(databaseURL, {
       // TODO: add more account config options
     });
 
-    models.article.hasOne('feed', models.feed);
+    models.article.hasOne('feed', models.feed, { reverse: 'articles'} );
     models.account.hasMany('feeds', models.feed, {
       subdate: Date
     }, { reverse: 'accounts' });
@@ -76,7 +76,7 @@ app.use(orm.express(databaseURL, {
   }
 }));
 
-function getFeed(url, callback) {
+function getFeedData(url, callback) {
   var data = {
     meta: null,
     articles: []
@@ -104,7 +104,7 @@ function getFeed(url, callback) {
 function handleError(err, res) {
   if(err) {
     console.error(err);
-    res.send(500);
+    res.send(404);
   }
 }
 
@@ -113,7 +113,7 @@ app.get('/', function(req, res){
 });
 
 app.get('/feed', function(req, res) {
-  getFeed(req.query.url, function(err, feed) {
+  getFeedData(req.query.url, function(err, feed) {
     handleError(err, res);
     res.render('feed', feed);
   });
@@ -127,55 +127,97 @@ app.get('/feed/:id', function(req, res) {
   });
 });
 
-app.post('/feed/new', function(req, res) {
-  getFeed(req.body.url, function(err, feed) {
+app.get('/feed/:id/articles', function(req, res) {
+  req.models.feed.get(req.params.id, function(err, feed) {
     handleError(err, res);
-    var feedData = feed.meta;
-    req.models.feed.find({ xmlurl: feedData.xmlurl }, function(err, feeds) {
+    if(feed) feed.getArticles(function(err, articles) {
       handleError(err, res);
-      if(feeds.length > 0) {
-        req.models.feed.get(feeds[0].id, function(err, sameFeed) {
-          sameFeed.save(feedData, function(err) {
-            handleError(err, res);
+      res.send(articles);
+    });
+    else res.send(404);
+  });
+});
+
+function createOrUpdateFeed(Models, data, callback) {
+  var feedData = data.meta;
+  Models.feed.find({ xmlurl: feedData.xmlurl }, function(err, feeds) {
+    if(err) callback(err);
+    if(feeds.length > 0) {
+      Models.feed.get(feeds[0].id, function(err, sameFeed) {
+        sameFeed.save(feedData, function(err) {
+          if(err) callback(err);
+        });
+        callback(null);
+      });
+    } else {
+      var feed = new Models.feed(feedData);
+      feed.save(function(err) {
+        if(err) callback(err);
+      });
+      callback(null);
+    }
+  });
+}
+
+function createOrUpdateArticles(Models, articles, feedId, callback) {
+  var articlesProcessed = 0;
+  _(articles).each(function(element, index, list) {
+    Models.article.find({ guid: element.guid, link: element.link }, function(err, articles) {
+      if(err) callback(err);
+      if(articles.length == 0) {
+        var newArticle = new Models.article(element);
+        if(err) callback(err);
+        Models.feed.get(feedId, function(err, feed) {
+          if(err) callback(err);
+          newArticle.setFeed(feed, function(err) {
+            if(err) callback(err);
+            newArticle.save(function(err) {
+              if(err) callback(err);
+              if(++articlesProcessed >= articles.length)
+                callback(null);
+            });
           });
         });
-      } else {
-        req.models.feed.create(feedData, function(err, item) {
-          handleError(err, res);
-        });
       }
+      else if(++articlesProcessed >= articles.length)
+        callback(null);
     });
-    res.send(200);
+  });
+}
+
+app.post('/feed/new', function(req, res) {
+  getFeedData(req.body.url, function(err, data) {
+    handleError(err, res);
+    createOrUpdateFeed(req.models, data, function(err) {
+      handleError(err, res);
+      res.send(200);
+    });
   });
 });
 
 app.post('/feed/:id/update', function(req, res) {
   req.models.feed.exists(req.params.id, function(err, exists) {
-    if(err) res.send(error);
+    handleError(err, res);
     if(!exists) res.send(404);
   });
   req.models.feed.get(req.params.id, function(err, feed) {
-    handleError(err);
-    if(!feed) res.send(404);
-    getFeed(feed.xmlurl, function(err, feed) {
+    handleError(err, res);
+    if(!feed) {
+      res.send(404);
+    }
+    getFeedData(feed.xmlurl, function(err, data) {
       handleError(err, res);
-      _(feed.articles).each(function(element, index, list) {
-        req.models.article.find({ guid: element.guid, link: element.link }, function(err, articles) {
+      createOrUpdateFeed(req.models, data, function(err) {
+        handleError(err, res);
+        createOrUpdateArticles(req.models, data.articles, req.params.id, function(err) {
           handleError(err, res);
-          if(articles.length == 0) {
-            var newArticle = new req.models.article(element);
+          feed.getArticles(function(err, articles) {
             handleError(err, res);
-            req.models.feed.get(req.params.id, function(err, feed) {
-              handleError(err, res);
-              newArticle.setFeed(feed, function(err) {
-                handleError(err, res);
-                newArticle.save(function(err) {
-                  handleError(err, res);
-                  res.send(feed);
-                });
-              });
+            res.send({
+              feed: feed,
+              articles: articles
             });
-          }
+          });
         });
       });
     });
